@@ -1,0 +1,232 @@
+# PROBIOTICS HUNT in piglets: 
+
+# scope: 
+# for each piglets 
+# map its reads (samples from specific dates) 
+# directly against a fasta file comprising of 
+# the piglet's MAGs and the probiotics whole genomes
+
+##########################################################################################
+
+# STEP 1 : create screen session
+screen -S add_bins_header
+
+
+# STEP 2 : save bins with pigID and bin number as header 
+cd /shared/homes/s1/pig_microbiome/out_new_copy_bins_no_headers_copy/
+for f in *.fa ; do sed "1s/^/\>$f\n/" "$f" > /shared/homes/12705859/test/outdir/$f ; done
+
+
+# STEP 3 : 
+# concatenating bins from distinct piggies/subjects into a new file (named “pigID.fa”):
+for pigID in $(ls *.fa | cut -f1-1 -d_ | sort -u); do cat "$pigID"*.fa > "$pigID.fa"; done
+
+
+# STEP 4 :
+# clean this dir (separate input from output): 
+# move all the bins to a new dir: 
+mkdir all_bins_no_headers
+mv *bins* ./all_bins_no_headers/.
+
+
+# STEP 5 : 
+# get the whole genomes of the probiotics concatenated and stripped of contigs/scaffolds headers 
+cd /shared/homes/s1/i3_genomes/probiotics
+cp ./Lact*/*contigs.fasta /shared/homes/12705859/test/outdir/
+
+# STEP 6 : 
+# remove (contig) headers of probiotics fasta files 
+# done this for the 6 probiotics
+sed '/^>/d' "Lactobacillus_acidophilus_NCIMB701748_ATCC4356.contigs.fasta" > 
+Lactobacillus_acidophilus_NCIMB701748_ATCC4356.contigs_noheaders.fasta
+# move all the ones with still the contig headers to another dir (can’t remove because protected)
+
+# copy all Lact probiotics sequences to a new dir
+mkdir probi
+cp Lact* ./probi
+cd probi
+
+# make a copy 
+cp Lactobacillus_acidophilus_NCIMB701748_ATCC4356.contigs_noheaders.fasta LA
+cp Lactobacillus_plantarum_140318.contigs_noheaders.fasta LP1
+cp Lactobacillus_plantarum_NCIMB11974_ATCC14917.contigs_noheaders.fasta LP2
+cp Lactobacillus_delbrueckii_NCIMB11778_ATCC11842.contigs_noheaders.fasta LD
+cp Lactobacillus_rhamnosus_NCIMB8010_ATCC7469.contigs_noheaders.fasta LR
+cp Lactobacillus_salivarius_140318.contigs_noheaders.fasta LS
+
+# remove all new lines :
+awk '{ printf "%s", $0 }' LA > LA_header
+awk '{ printf "%s", $0 }' LP1 > LP1_header
+awk '{ printf "%s", $0 }' LP2 > LP2_header
+awk '{ printf "%s", $0 }' LR > LR_header
+awk '{ printf "%s", $0 }' LS > LS_header
+awk '{ printf "%s", $0 }' LD > LD_header
+
+vim LA_header
+# inside vim: 
+:set list
+# no $ anymore 
+
+# now add header
+for f in L*header ; do sed "1s/^/\>$f\n/" "$f" > /shared/homes/12705859/test/outdir/$f; done
+cd ..
+
+# STEP 7 : 
+# concatenate the probiotics to each other
+for f in *_header ; do sed -e '$s/$/\n/' $f ; done > probiotics.fasta
+
+# now test if it actually worked by bwa index
+# bwa index created .amb .ann files that look like:  
+head probiotics.fasta.amb
+15095124 6 551
+424932 1 W
+563079 1 R
+889626 1 W
+889627 1 Y
+889631 1 Y
+889707 1 R
+...
+
+head probiotics.fasta.ann
+15095124 6 11
+0 LA_header (null)
+0 1946383 54
+0 LD_header (null)
+1946383 1774367 157
+0 LP1_header (null)
+3720750 3206440 59
+0 LP2_header (null)
+6927190 3224251 99
+0 LR_header (null)
+...
+
+# instead, the pigs bwa index outputs look like this: 
+head T12057.fa.amb
+96604573 63 0
+
+head T12057.fa.ann
+96604573 63 11
+0 T12057_bins.10.fa (null)
+0 2430146 0
+0 T12057_bins.11.fa (null)
+2430146 1111835 0
+0 T12057_bins.12.fa (null)
+3541981 1729143 0
+0 T12057_bins.13.fa (null)
+5271124 946712 0
+0 T12057_bins.14.fa (null)
+
+
+# STEP 8 : 
+# concatenate the probiotics to each of the piglets bins fasta:
+# test on one: 
+cat probiotics.fasta T12057.fa > new
+bwa index new
+
+head -n 20 new.ann
+111699697 69 11
+0 LA_header (null)
+0 1946383 54
+0 LD_header (null)
+1946383 1774367 157
+0 LP1_header (null)
+3720750 3206440 59
+0 LP2_header (null)
+6927190 3224251 99
+0 LR_header (null)
+10151441 2946397 71
+0 LS_header (null)
+13097838 1997286 111
+0 T12057_bins.10.fa (null)
+15095124 2430146 0
+0 T12057_bins.11.fa (null)
+17525270 1111835 0
+
+# try to run one mapping: reads from T12057 against the prob+bins of T12057: 
+mkdir T12057_reads
+cp /shared/homes/s1/pig_microbiome/out_new/T12057/reads/T12057-170130-01_cleaned_paired.fq.gz ./T12057_reads/
+cd T12057_reads
+gzip -d T12057-170130-01_cleaned_paired.fq.gz 
+# subset the reads (only 250,000 reads, which is 1000000/4):
+head T12057-170130-01_cleaned_paired.fq -n 1000000 > T12_mini.fq
+
+
+##############: mapping the reads against the bins (bins=prob genomes+pigID bins):
+
+bwa index new
+
+bwa mem -p new ./T12057_reads/T12_mini.fq > new_vs_T12.sam
+# (where bwa mem -p : Assume the first input query file is interleaved paired-end FASTA/Q.)
+
+samtools view -Sb new_vs_T12.sam | samtools sort -o new_vs_T12.bam
+
+samtools flagstat new_vs_T12.bam
+250773 + 0 in total (QC-passed reads + QC-failed reads)
+0 + 0 secondary
+773 + 0 supplementary
+0 + 0 duplicates
+136183 + 0 mapped (54.31% : N/A)
+250000 + 0 paired in sequencing
+125000 + 0 read1
+125000 + 0 read2
+126140 + 0 properly paired (50.46% : N/A)
+129752 + 0 with itself and mate mapped
+5658 + 0 singletons (2.26% : N/A)
+1938 + 0 with mate mapped to a different chr
+1561 + 0 with mate mapped to a different chr (mapQ>=5)
+
+
+samtools index new_vs_T12.bam
+
+
+##################################
+
+further STEPS: 
+
+samtools sort -n -o namesort_new_vs_T12.bam new_vs_T12.bam
+
+samtools fixmate -m namesort_new_vs_T12.bam fixmate_new_vs_T12.bam
+
+samtools sort -o positionsort_new_vs_T12.bam fixmate_new_vs_T12.bam
+
+samtools markdup -r -s positionsort_new_vs_T12.bam DEDUP_new_vs_T12.bam
+
+READ 250773 WRITTEN 247887 
+EXCLUDED 115363 EXAMINED 135410
+PAIRED 129752 SINGLE 5658
+DULPICATE PAIR 2612 DUPLICATE SINGLE 274
+DUPLICATE TOTAL 2886
+
+##################################
+
+samtools mpileup DEDUP_new_vs_T12.bam | cut -f 1,2,4 > new_vs_T12.tsv
+
+
+# determining coverage against probiotics strains: 
+# determine what fraction of all sites in the probiotic genome showed up in the pileup. 
+# e.g. count the number of rows where column 1 matches the probiotic genome name
+
+
+# could use the --ff (filter flags) set to SECONDARY
+samtools mpileup
+
+Usage: samtools mpileup [options] in1.bam [in2.bam [...]]
+
+Input options:
+  -6, --illumina1.3+      quality is in the Illumina-1.3+ encoding
+  -A, --count-orphans     do not discard anomalous read pairs
+  -b, --bam-list FILE     list of input BAM filenames, one per line
+  -B, --no-BAQ            disable BAQ (per-Base Alignment Quality)
+  -C, --adjust-MQ INT     adjust mapping quality; recommended:50, disable:0 [0]
+  -d, --max-depth INT     max per-file depth; avoids excessive memory usage [8000]
+  -E, --redo-BAQ          recalculate BAQ on the fly, ignore existing BQs
+  -f, --fasta-ref FILE    faidx indexed reference sequence file
+  -G, --exclude-RG FILE   exclude read groups listed in FILE
+  -l, --positions FILE    skip unlisted positions (chr pos) or regions (BED)
+  -q, --min-MQ INT        skip alignments with mapQ smaller than INT [0]
+  -Q, --min-BQ INT        skip bases with baseQ/BAQ smaller than INT [13]
+  -r, --region REG        region in which pileup is generated
+  -R, --ignore-RG         ignore RG tags (one BAM = one sample)
+  --rf, --incl-flags STR|INT  required flags: skip reads with mask bits unset []
+  --ff, --excl-flags STR|INT  filter flags: skip reads with mask bits set
+                                            [UNMAP,SECONDARY,QCFAIL,DUP]
