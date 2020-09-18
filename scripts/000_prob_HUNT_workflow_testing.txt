@@ -1,7 +1,7 @@
 # PROBIOTICS HUNT in piglets: 
 
 # scope: 
-# for each piglets 
+# for each piglet
 # map its reads (samples from specific dates) 
 # directly against a fasta file comprising of 
 # the piglet's MAGs and the probiotics whole genomes
