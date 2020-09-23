@@ -18,32 +18,34 @@ cd $mapping_dir
 mkdir matrix_out
 
 mkdir map_BB  
-mv Bifidobacterium_bifidum_* /map_BB/.
+mv Bifidobacterium_bifidum_* map_BB/.
 
 mkdir map_EF  
-mv Enterococcus_faecium_* /map_EF/.
+mv Enterococcus_faecium_* map_EF/.
 
 mkdir map_LAc  
-mv Lactobacillus_acidophilus_* /map_LAc/.
+mv Lactobacillus_acidophilus_* map_LAc/.
 
 mkdir map_LAm  
-mv Lactobacillus_amylovorus_* /map_LAm/.
+mv Lactobacillus_amylovorus_* map_LAm/.
 
 mkdir map_LD  
-mv Lactobacillus_delbrueckii_* /map_LD/.
+mv Lactobacillus_delbreuckii_* map_LD/.
 
 mkdir map_LH  
-mv Lactobacillus_helveticus_* /map_LH/.
+mv Lactobacillus_helveticus_* map_LH/.
 
 mkdir map_LR  
-mv Lactobacillus_rhamnosus_* /map_LR/.
+mv Lactobacillus_rhamnosus_* map_LR/.
 
 mkdir map_LS  
-mv Lactobacillus_salivarius_* /map_LS/.
+mv Lactobacillus_salivarius_* map_LS/.
 
 mkdir map_ST
-mv Streptococcus_thermophilus_* /map_ST/.
+mv Streptococcus_thermophilus_* map_ST/.
 
+mkdir map_LP
+mv Lactobacillus_plantarum* map_LP/.
 
 panphlan_profiling.py -p /shared/homes/12705859/panphlan/Bifidobacterium_bifidum/Bifidobacterium_bifidum_pangenome.tsv -i map_BB/ --o_matrix ./matrix_out/profile_BB --min_coverage 1 --left_max 1.70 --right_min 0.30
 
@@ -63,6 +65,8 @@ panphlan_profiling.py -p /shared/homes/12705859/panphlan/Enterococcus_faecium/En
 
 panphlan_profiling.py -p /shared/homes/12705859/panphlan/Lactobacillus_acidophilus/Lactobacillus_acidophilus_pangenome.tsv -i map_LAc/ --o_matrix ./matrix_out/profile_LAc --min_coverage 1 --left_max 1.70 --right_min 0.30
 # this is not working for Fe7 samples , index out of range 
+
+panphlan_profiling.py -p /shared/homes/12705859/panphlan/Lactobacillus_plantarum/Lactobacillus_plantarum_pangenome.tsv -i map_LP/ --o_matrix ./matrix_out/profile_LP --min_coverage 1 --left_max 1.70 --right_min 0.30
 
 
 # this is the least stringent option: --min_coverage 1 --left_max 1.70 --right_min 0.30

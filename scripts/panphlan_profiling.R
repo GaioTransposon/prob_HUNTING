@@ -9,8 +9,8 @@ library(lattice)
 
 
 source_dir = "/Users/12705859/metapigs_dry/source_data/" # git 
-middle_dir = "/Users/12705859/Desktop/probioticsHunt/panphlan/middle_dir/" # locale
-out_dir = "/Users/12705859/Desktop/probioticsHunt/panphlan/out/" # locale
+middle_dir = "/Users/12705859/Desktop/probioticsHunt/middle_dir/" # locale
+out_dir = "/Users/12705859/Desktop/probioticsHunt/out_dir/" # locale
 
 
 ######################################################################
@@ -81,16 +81,11 @@ for (file in myfiles) {
   
   pdf(paste0(out_dir,"heatmap_",file,".pdf"))
   print(heatmap.2(mymat,main = file, 
-                  trace='none', 
+                  trace='none', Rowv = TRUE, Colv = NULL,
                   cexRow = 0.4)) # dendrogram='none', Rowv=TRUE, Colv=TRUE
   dev.off()
 
 }
 
 ######################################################################
-
-
-
-
-
 
