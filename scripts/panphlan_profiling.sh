@@ -30,7 +30,7 @@ mkdir map_LAm
 mv Lactobacillus_amylovorus_* map_LAm/.
 
 mkdir map_LD  
-mv Lactobacillus_delbreuckii_* map_LD/.
+mv Lactobacillus_delbrueckii_* map_LD/.
 
 mkdir map_LH  
 mv Lactobacillus_helveticus_* map_LH/.

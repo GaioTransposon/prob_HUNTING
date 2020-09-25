@@ -47,7 +47,6 @@ colnames(mdat) <- c("pig","cohort","plate_well")
 
 ######################################################################
 
-
 for (file in myfiles) {
   
   # reading in
@@ -81,7 +80,7 @@ for (file in myfiles) {
   
   pdf(paste0(out_dir,"heatmap_",file,".pdf"))
   print(heatmap.2(mymat,main = file, 
-                  trace='none', Rowv = TRUE, Colv = NULL,
+                  trace='none', #Rowv = TRUE, Colv = NULL,
                   cexRow = 0.4)) # dendrogram='none', Rowv=TRUE, Colv=TRUE
   dev.off()
 
